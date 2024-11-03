@@ -22,6 +22,10 @@ $(EXEC): $(OBJS)
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+# Run the program
+run: $(EXEC)
+	./$(EXEC)
+
 # Clean up build files
 clean:
 	rm -f $(OBJS) $(EXEC)
