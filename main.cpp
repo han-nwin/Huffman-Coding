@@ -1,6 +1,7 @@
 #include <iostream>
+#include <stdexcept>
 #include <vector>
-
+#include <fstream>
 template <typename Comparable>
     struct HeapNode {
       int frequency; //Primary key
@@ -48,11 +49,11 @@ class MinHeap {
       int rightChildIndex = 2 * i + 2;
       int smallestChildIndex = i;
 
-      if (leftChildIndex <= static_cast<int>(heap.size()) && heap[leftChildIndex] < heap[smallestChildIndex]) {
+      if (leftChildIndex < static_cast<int>(heap.size()) && heap[leftChildIndex] < heap[smallestChildIndex]) {
         smallestChildIndex = leftChildIndex;
       }
 
-      if (rightChildIndex <= static_cast<int>(heap.size()) && heap[rightChildIndex] < heap[smallestChildIndex]) {
+      if (rightChildIndex < static_cast<int>(heap.size()) && heap[rightChildIndex] < heap[smallestChildIndex]) {
         smallestChildIndex = rightChildIndex;
       }
 
@@ -86,13 +87,48 @@ class MinHeap {
       }
     }
 
+
+    void privateInsert(const Comparable & node) {
+      heap.push_back(node);
+      percolateUp(static_cast<int>(heap.size()-1));
+
+    }
+
+    Comparable privateDeleteMin() {
+      if (heap.empty()) {
+        throw std::runtime_error("Heap is empty");
+      }
+
+      Comparable minElement = heap[0]; // Get the element
+      heap[0] = heap[heap.size() - 1]; // Swap it with the last element
+      heap.pop_back(); // Remove the last element
+                       //
+      //If the heap is not empty after removal percolate element at root down
+      if (!heap.empty()) {
+        percolateDown(0);
+      }
+
+      return minElement;
+    }
+
+    const Comparable & privateMin() const {
+      if (heap.empty()) {
+        throw std::runtime_error("Heap is empty");
+      }
+      return heap[0];
+    }
+
+
     void privateDisplay(){
+      if (heap.empty()) {
+        std::cerr << "Heap is empty" << std::endl;
+        return;
+      }
       for (auto & element : heap) {
         std::cout << element << ", ";
       }
       std::cout << std::endl;
     }
-
 
 
   public:
@@ -104,23 +140,79 @@ class MinHeap {
     }
   };
 
-  int size(){
+  bool empty() {
+    return heap.empty();
+  }
+
+  int size() {
     return static_cast<int>(this->heap.size());
   }
 
-  void display(){
+  void insert(const Comparable & node) {
+    privateInsert(node);
+  } 
+
+  Comparable deleteMin() {
+    return privateDeleteMin();
+  }
+
+  const Comparable & min() const {
+    return privateMin();
+  }
+
+  void display() {
     this->privateDisplay();
   }
   
-
-
-
-
   }; //end MinHeap Class
 
 
 int main(){
-// Initialize MinHeap with integers
+  
+  //====== READ FROM FILE =====//
+  std::ifstream inputFile("merchant.txt"); // Open the file
+  if (!inputFile) {
+      std::cerr << "Error opening input file!" << std::endl;
+      return 1; // Exit if the file couldn't be opened
+  }
+  
+  //Initialize a vector for frequency counting (size 256 for all ASCII chars)
+  std::vector<int> charFrequency(256,0);
+
+  char c;
+  while (inputFile.get(c)) {
+    //cast c into unsigned char then cast to unsigned int to store as an index of charFrequency
+    //NOTE we can skip <unsigned int> cast since C++ will implicitly cast it 
+    charFrequency[static_cast<unsigned int>(static_cast<unsigned char>(c))]++;
+  }
+  inputFile.close();
+
+  //==CHECK the frequency of 27 characters
+  //std::cout << static_cast<unsigned char>(10) << " is " << charFrequency[10] << std::endl; //10 is a \n
+  //std::cout << static_cast<unsigned char>(13) << " is " << charFrequency[13] << std::endl; //13 is a \r
+  std::cout << static_cast<unsigned char>(32) << " is " << charFrequency[32] << std::endl; //32 is a space
+  for (int i = 97; i <= 122; i++) { //a-z
+    std::cout << static_cast<unsigned char>(i) << " is " << charFrequency[i] << std::endl;
+  }
+  
+  //==MAKE a node array
+  std::vector<HeapNode<char>> nodes;
+  nodes.push_back(HeapNode<char>(charFrequency[32], static_cast<unsigned char>(32)));// Add the space
+  for (int i = 97; i <= 122; i++) { //a-z
+    nodes.push_back(HeapNode<char>(charFrequency[i], static_cast<unsigned char>(i))); // Add a-z
+  }
+  //print check 
+  for (auto & element : nodes) {
+    std::cout << element << std::endl;
+  }
+
+  //==MAKE a MinHeap out of the node array
+  MinHeap<HeapNode<char>> minHeap(nodes);
+  minHeap.display();
+
+
+/**
+  // Initialize MinHeap with integers
   std::vector<int> intValues = {10, 3, 5, 1, 12, 7};
   MinHeap<int> intHeap(intValues);
 
@@ -131,13 +223,45 @@ int main(){
 
     // Using MinHeap with HeapNode<char>
   std::vector<HeapNode<char>> nodes = {
-      HeapNode<char>(3, 'a'),
+      HeapNode<char>(5, 'a'),
       HeapNode<char>(1, 'b'),
-      HeapNode<char>(2, 'c')
+      HeapNode<char>(2, 'c'),
+      HeapNode<char>(2, 'd'),
+      HeapNode<char>(2, 'e'),
+      HeapNode<char>(3, 'f'),
   };
   MinHeap<HeapNode<char>> heapWithNodes(nodes);
   std::cout << "Heap with nodes size: " << heapWithNodes.size() << std::endl;
   heapWithNodes.display();
 
+  std::cout << "Min " << heapWithNodes.min() << std::endl;
+  heapWithNodes.display();
+  std::cout << "Delete Min " << heapWithNodes.deleteMin() << std::endl;
+  heapWithNodes.display();
+  std::cout << "Min " << heapWithNodes.min() << std::endl;
+  heapWithNodes.display();
+  std::cout << "Delete Min " << heapWithNodes.deleteMin() << std::endl;
+  heapWithNodes.display();
+  std::cout << "Min " << heapWithNodes.min() << std::endl;
+  heapWithNodes.display();
+  std::cout << "Delete Min " << heapWithNodes.deleteMin() << std::endl;
+  heapWithNodes.display();
+  std::cout << "Min " << heapWithNodes.min() << std::endl;
+  heapWithNodes.display();
+  std::cout << "Delete Min " << heapWithNodes.deleteMin() << std::endl;
+  heapWithNodes.display();
+  std::cout << "Min " << heapWithNodes.min() << std::endl;
+  heapWithNodes.display();
+  std::cout << "Delete Min " << heapWithNodes.deleteMin() << std::endl;
+  heapWithNodes.display();
+  std::cout << "Min " << heapWithNodes.min() << std::endl;
+  heapWithNodes.display();
+  std::cout << "Delete Min " << heapWithNodes.deleteMin() << std::endl;
+  heapWithNodes.display();
+
+  int i = 0x41;
+  char c = static_cast<char>(i);
+  std::cout << c << std::endl;
+*/
   return 0;
 }
