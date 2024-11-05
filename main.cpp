@@ -1,42 +1,48 @@
 #include <iostream>
+#include <ostream>
 #include <stdexcept>
 #include <vector>
 #include <fstream>
+#include <sstream>
+
+
 template <typename Comparable>
-    struct HeapNode {
-      int frequency; //Primary key
-      Comparable value; //secondary key
-      
-      //Constructor
-      HeapNode(int f, const Comparable & v) : frequency(f), value(v) {}
+struct HeapNode {
+  int frequency; // Primary key
+  Comparable value; // Value and also a secondary key
+  HeapNode* left;   // Pointer to the left child
+  HeapNode* right;  // Pointer to the right child
 
-      // Less-than operator for comparing HeapNode objects by key
-      bool operator<(const HeapNode & other) const {
-        if (frequency == other.frequency) {
-          return value < other.value;
-        }
-        return frequency<other.frequency;
-      }
+  //Constructor
+  HeapNode(int f, const Comparable & v) : frequency(f), value(v), left(nullptr), right(nullptr){}
 
-      //Greater-than operator for comparing HeadNode objects by key
-      bool operator>(const HeapNode & other) const {
-        if (frequency == other.frequency) {
-          return value > other.value;
-        }
-        return frequency>other.frequency;
-      }
+  // Less-than operator for comparing HeapNode objects by key
+  bool operator<(const HeapNode & other) const {
+    if (frequency == other.frequency) {
+      return value < other.value;
+    }
+    return frequency<other.frequency;
+  }
 
-      // Equal operator for comparing HeapNode objects
-      bool operator==(const HeapNode & other) const {
-        return frequency == other.frequency && value == other.value;
-      }
+  //Greater-than operator for comparing HeadNode objects by key
+  bool operator>(const HeapNode & other) const {
+    if (frequency == other.frequency) {
+      return value > other.value;
+    }
+    return frequency>other.frequency;
+  }
 
-      // Overload the << operator for printing HeapNode
-      friend std::ostream &operator<<(std::ostream &os, const HeapNode &node) {
-        os << "{" << node.frequency << ":" << node.value << "}";
-        return os;
-      }
-    };//end of HeapNode struct
+  // Equal operator for comparing HeapNode objects
+  bool operator==(const HeapNode & other) const {
+    return frequency == other.frequency && value == other.value;
+  }
+
+  // Overload the << operator for printing HeapNode
+  friend std::ostream &operator<<(std::ostream &os, const HeapNode &node) {
+    os << "{" << node.frequency << ":" << node.value << "}";
+    return os;
+  }
+};//end of HeapNode struct
 
 template <typename Comparable>
 class MinHeap {
@@ -132,42 +138,63 @@ class MinHeap {
 
 
   public:
-   
-  // Constructor that handles both an empty heap or an array of HeapNode
-  explicit MinHeap(const std::vector<Comparable> & arr = {}) : heap(arr){
-    if(!heap.empty()) {
-      buildHeap();
+    
+    // Constructor that handles both an empty heap or an array of HeapNode
+    explicit MinHeap(const std::vector<Comparable> & arr = {}) : heap(arr){
+      if(!heap.empty()) {
+        buildHeap();
+      }
+    };
+
+    bool empty() {
+      return heap.empty();
     }
-  };
 
-  bool empty() {
-    return heap.empty();
-  }
+    int size() {
+      return static_cast<int>(this->heap.size());
+    }
 
-  int size() {
-    return static_cast<int>(this->heap.size());
-  }
+    void insert(const Comparable & node) {
+      privateInsert(node);
+    } 
 
-  void insert(const Comparable & node) {
-    privateInsert(node);
-  } 
+    Comparable deleteMin() {
+      return privateDeleteMin();
+    }
 
-  Comparable deleteMin() {
-    return privateDeleteMin();
-  }
+    const Comparable & min() const {
+      return privateMin();
+    }
 
-  const Comparable & min() const {
-    return privateMin();
-  }
+    void display() {
+      this->privateDisplay();
+    }
+    
+  }; //end MinHeap Class
+     //
 
-  void display() {
-    this->privateDisplay();
+
+// Helper function to build the codebook
+void buildCodebook(const HeapNode<char> * parent, const std::string path, std::vector<std::string> & codebook) {
+  //reach the end
+  if (parent->left == nullptr && parent->right == nullptr) {
+    codebook[static_cast<unsigned int>(parent->value)] = path;
+    return;
   }
   
-  }; //end MinHeap Class
+  if (parent->left != nullptr) {
+    buildCodebook(parent->left, path + "0", codebook );
+  }
+
+  if (parent->right != nullptr) {
+    buildCodebook(parent->right, path + "1", codebook);
+  }
+
+}
 
 
 int main(){
+
   
   //====== READ FROM FILE =====//
   std::ifstream inputFile("merchant.txt"); // Open the file
@@ -176,92 +203,146 @@ int main(){
       return 1; // Exit if the file couldn't be opened
   }
   
+  unsigned long fileSize = 0;
+  char c;
+  while (inputFile.get(c)) {
+    if (c != '\n' && c != '\r') {
+      fileSize++;
+    }
+  }
+  // Reset the position to the beginning for further processing
+  inputFile.clear(); // Clear EOF flag
+  inputFile.seekg(0, std::ios::beg);// Reset the position to the beginning if to read the file again
+
+
+  unsigned long outputLength;
+  while (true) {
+    std::string input;
+    std::cout << "Enter output length: ";
+    std::cin >> input;
+
+    std::stringstream ss(input);
+    if (!(ss >> outputLength) || !(ss.eof())) {
+      std::cerr << "Invalid input. Please enter a valid number." << std::endl;
+    }
+    else if (outputLength <= 0) {
+      std::cerr << "Output length must be a positive number." << std::endl;
+    }
+    else if (outputLength > fileSize) {
+      std::cerr << "Output length too big. Should be <= " << fileSize << std::endl;
+    }
+    else break;
+  }
+
   //Initialize a vector for frequency counting (size 256 for all ASCII chars)
   std::vector<int> charFrequency(256,0);
 
-  char c;
+  std::string inString; //Store N length input String to use later
+
   while (inputFile.get(c)) {
-    //cast c into unsigned char then cast to unsigned int to store as an index of charFrequency
-    //NOTE we can skip <unsigned int> cast since C++ will implicitly cast it 
-    charFrequency[static_cast<unsigned int>(static_cast<unsigned char>(c))]++;
+    if (c != '\n' && c != '\r') {
+      //cast c into unsigned char then cast to unsigned int to store as an index of charFrequency
+      //NOTE we can skip <unsigned int> cast since C++ will implicitly cast it 
+      charFrequency[static_cast<unsigned int>(static_cast<unsigned char>(c))]++;
+      if (inString.length() <= outputLength) {
+        inString = inString + std::string(1, static_cast<unsigned char>(c));
+      }
+    }
   }
   inputFile.close();
-
-  //==CHECK the frequency of 27 characters
-  //std::cout << static_cast<unsigned char>(10) << " is " << charFrequency[10] << std::endl; //10 is a \n
-  //std::cout << static_cast<unsigned char>(13) << " is " << charFrequency[13] << std::endl; //13 is a \r
-  std::cout << static_cast<unsigned char>(32) << " is " << charFrequency[32] << std::endl; //32 is a space
-  for (int i = 97; i <= 122; i++) { //a-z
-    std::cout << static_cast<unsigned char>(i) << " is " << charFrequency[i] << std::endl;
-  }
   
+
   //==MAKE a node array
   std::vector<HeapNode<char>> nodes;
   nodes.push_back(HeapNode<char>(charFrequency[32], static_cast<unsigned char>(32)));// Add the space
   for (int i = 97; i <= 122; i++) { //a-z
     nodes.push_back(HeapNode<char>(charFrequency[i], static_cast<unsigned char>(i))); // Add a-z
   }
-  //print check 
-  for (auto & element : nodes) {
-    std::cout << element << std::endl;
-  }
+  
 
   //==MAKE a MinHeap out of the node array
   MinHeap<HeapNode<char>> minHeap(nodes);
+  std::cout << "\nMin Heap:" << std::endl;
   minHeap.display();
 
 
-/**
-  // Initialize MinHeap with integers
-  std::vector<int> intValues = {10, 3, 5, 1, 12, 7};
-  MinHeap<int> intHeap(intValues);
+  //===BUILD prefix-free tree
+  //Vector to store all dynamically allocated nodes
+  std::vector<HeapNode<char>*> allocatedNodes;
 
-  std::cout << "Size of intHeap: " << intHeap.size() << std::endl;
-  intHeap.display();
+  while(minHeap.size() > 1) {
+    HeapNode<char> * left = new HeapNode<char>(minHeap.deleteMin());
+    allocatedNodes.push_back(left);//store to free later
 
+    HeapNode<char> * right = new HeapNode<char>(minHeap.deleteMin());
+    allocatedNodes.push_back(right);//store to free later
+
+    //Create a dummy node with frequency - sum of 2 children frequency, dummy value: '\0'
+    HeapNode<char> dummy(left->frequency + right->frequency, '$');
+    //std::cout << "After adding 2 nodes" << std::endl;
+    dummy.left = left;
+    dummy.right = right;
+    minHeap.insert(dummy);
+    //minHeap.display();
+  }
+  HeapNode<char> prefixFreeTree = minHeap.deleteMin();
+  std::cout << "\nPrefix-free tree: \n"<< prefixFreeTree << std::endl;
+
+
+  //BUILDING Huffman Codebook
+  std::vector<std::string> codebook (256, "");
+  buildCodebook(&prefixFreeTree, "", codebook);
+
+  //EXPORT to file
+  std::string outString;
+  //print check
+  std::cout << "\nHuffman Codebook" << std::endl;
+  outString = outString + "'" + std::string(1, static_cast<unsigned char>(32)) + "' : " + codebook[32] + "\n";
+  for (int i = 97; i <= 122; i++) {
+    outString = outString + "'" + std::string(1, static_cast<unsigned char>(i)) + "' : " + codebook[i] + "\n";
+  }
+  // Iterate through each character in inString and encode
+  int huffmanBitTotal = 0;
+  int asciiBitTotal = 0;
+
+  for (char ch : inString) {
+
+    // Get the Huffman encoding from codebook
+    std::string huffmanCode = codebook[static_cast<unsigned char>(ch)];
+
+    // Calculate the bit length of the Huffman code and update totals
+    int huffmanBits = huffmanCode.length();
+    huffmanBitTotal += huffmanBits;
+
+    // 7 bits for ASCII encoding
+    int asciiBits = 7;
+    asciiBitTotal += asciiBits;
+
+    // Append the line to outString
+    outString += huffmanCode + "\t\t" + std::to_string(huffmanBitTotal) + "\t\t" + std::to_string(asciiBitTotal) + "\n";
+  }
+
+  std::cout << outString << std::endl;
+
+
+
+  // Create and open the output file
+  std::ofstream outfile("out.txt");  
+  if (!outfile) {
+    std::cerr << "Error creating output file!" << std::endl;
+    return 1;
+  }
+  // Write outString to the file
+  outfile << outString;
+  outfile.close();
+  std::cout << "====Result exported to 'out.txt' file successfully!====" << std::endl;
   
+  //Free memory allocated for left and right nodes above
+  for (auto & element : allocatedNodes) {
+    delete element;
+  }
 
-    // Using MinHeap with HeapNode<char>
-  std::vector<HeapNode<char>> nodes = {
-      HeapNode<char>(5, 'a'),
-      HeapNode<char>(1, 'b'),
-      HeapNode<char>(2, 'c'),
-      HeapNode<char>(2, 'd'),
-      HeapNode<char>(2, 'e'),
-      HeapNode<char>(3, 'f'),
-  };
-  MinHeap<HeapNode<char>> heapWithNodes(nodes);
-  std::cout << "Heap with nodes size: " << heapWithNodes.size() << std::endl;
-  heapWithNodes.display();
-
-  std::cout << "Min " << heapWithNodes.min() << std::endl;
-  heapWithNodes.display();
-  std::cout << "Delete Min " << heapWithNodes.deleteMin() << std::endl;
-  heapWithNodes.display();
-  std::cout << "Min " << heapWithNodes.min() << std::endl;
-  heapWithNodes.display();
-  std::cout << "Delete Min " << heapWithNodes.deleteMin() << std::endl;
-  heapWithNodes.display();
-  std::cout << "Min " << heapWithNodes.min() << std::endl;
-  heapWithNodes.display();
-  std::cout << "Delete Min " << heapWithNodes.deleteMin() << std::endl;
-  heapWithNodes.display();
-  std::cout << "Min " << heapWithNodes.min() << std::endl;
-  heapWithNodes.display();
-  std::cout << "Delete Min " << heapWithNodes.deleteMin() << std::endl;
-  heapWithNodes.display();
-  std::cout << "Min " << heapWithNodes.min() << std::endl;
-  heapWithNodes.display();
-  std::cout << "Delete Min " << heapWithNodes.deleteMin() << std::endl;
-  heapWithNodes.display();
-  std::cout << "Min " << heapWithNodes.min() << std::endl;
-  heapWithNodes.display();
-  std::cout << "Delete Min " << heapWithNodes.deleteMin() << std::endl;
-  heapWithNodes.display();
-
-  int i = 0x41;
-  char c = static_cast<char>(i);
-  std::cout << c << std::endl;
-*/
   return 0;
 }
+ 
+
