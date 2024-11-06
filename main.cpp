@@ -6,6 +6,10 @@
 #include <sstream>
 
 
+/**
+ * @brief HeapNode structure that hold frequency, value, pointers to left and right child.
+ * Provide comparision operator (> < =) based on the primary key (frequency) and secondary key (value)
+ * */
 template <typename Comparable>
 struct HeapNode {
   int frequency; // Primary key
@@ -44,12 +48,23 @@ struct HeapNode {
   }
 };//end of HeapNode struct
 
+/**
+ * @brief Class that provides Minimum heap data structure
+ * The data structure ensures storing comparable elements with the smallest key as the highest priority
+ * Provide necessary functions to perform storing, and retrieving data
+ * */
 template <typename Comparable>
 class MinHeap {
   private:
+
+    //Dynamic array to store elements of the heap
     std::vector<Comparable> heap;
 
-
+    /**
+     * @brief Private function to move the lower priority key down the tree.
+     * @params int index 
+     * @return nothing
+     * */
     void percolateDown(int i) {
       int leftChildIndex = 2 * i + 1;
       int rightChildIndex = 2 * i + 2;
@@ -69,7 +84,11 @@ class MinHeap {
       }
     }
 
-
+    /**
+     * @brief Private function to move the higher priority key up the tree
+     * @params int index
+     * @return nothing
+     * */
     void percolateUp(int i) {
       // Check if index is out of bounds
       if (i >= static_cast<int>(heap.size())) {
@@ -86,26 +105,40 @@ class MinHeap {
 
     }
 
-
+    /**
+     * @brief function that build out a heap structure from an array
+     * Helper for constructor when users want to initialize the heap with an array
+     * @params: nothing
+     * @return: nothing
+     * */
     void buildHeap() {
       for (int i = static_cast<int>((heap.size()/2 - 1)); i >= 0; i--){
         percolateDown(i);
       }
     }
 
-
+    /**
+     * @brief private function to insert an element into the heap
+     * @params: const Comparable & node 
+     * @return nothing
+     * */
     void privateInsert(const Comparable & node) {
-      heap.push_back(node);
-      percolateUp(static_cast<int>(heap.size()-1));
+      heap.push_back(node); //Inser the element to the back of the heap array
+      percolateUp(static_cast<int>(heap.size()-1)); //move the inserted element to ensure heap structure
 
     }
 
+    /**
+     * @brief private function to retrieve and remove an element from the top of the heap (highest priority)
+     * @params nothing
+     * @return Comparable minElement
+     * */
     Comparable privateDeleteMin() {
       if (heap.empty()) {
         throw std::runtime_error("Heap is empty");
       }
 
-      Comparable minElement = heap[0]; // Get the element
+      Comparable minElement = heap[0]; // Copy the element
       heap[0] = heap[heap.size() - 1]; // Swap it with the last element
       heap.pop_back(); // Remove the last element
                        //
@@ -114,9 +147,16 @@ class MinHeap {
         percolateDown(0);
       }
 
-      return minElement;
+      return minElement; //return the copy
     }
 
+
+    /**
+     * @brief Private function that return the value of the highest priority element
+     * This function does not remove the element from the heap
+     * @params nothing
+     * @return const Comparable & element
+     * */
     const Comparable & privateMin() const {
       if (heap.empty()) {
         throw std::runtime_error("Heap is empty");
@@ -124,7 +164,9 @@ class MinHeap {
       return heap[0];
     }
 
-
+    /**
+     * @brief Function to display the heap to stdout
+     * */
     void privateDisplay(){
       if (heap.empty()) {
         std::cerr << "Heap is empty" << std::endl;
@@ -139,42 +181,74 @@ class MinHeap {
 
   public:
     
-    // Constructor that handles both an empty heap or an array of HeapNode
-    explicit MinHeap(const std::vector<Comparable> & arr = {}) : heap(arr){
+    /**
+     * Constructor that handles both an empty heap or an array of HeapNode
+     * If user initialize with an array, constructor calls buildHeap() function to 
+     * build a heap out of that array.
+     * If nothing is given, an empty heap is created.
+     * */    explicit MinHeap(const std::vector<Comparable> & arr = {}) : heap(arr){
       if(!heap.empty()) {
         buildHeap();
       }
     };
 
+    /**
+     * @brief public function that check if the heap is empty
+     * @return true/false
+     * */
     bool empty() {
       return heap.empty();
     }
 
+    /** 
+     * @brief public funtion that return current size of the heap
+     * @return int size
+     * */
     int size() {
       return static_cast<int>(this->heap.size());
     }
-
+    /**
+     * @brief public function that insert an element to the heap
+     * @params const Comparable & node 
+     * @return nothing
+     * */
     void insert(const Comparable & node) {
       privateInsert(node);
     } 
 
+    /**
+     * @brief public funtion that delete the highest priority element from the heap and return that element
+     * @params nothing
+     * @return Comparable element 
+     * */
     Comparable deleteMin() {
       return privateDeleteMin();
     }
 
+    /**
+     * @brief public function that return the value of the highest priority element
+     * This function does not remove the element from the heap
+     * @params nothing
+     * @return const Comparable & element
+     * */
     const Comparable & min() const {
       return privateMin();
     }
 
+    /**
+     * @brief public funtion to display the heap to stdout 
+     * */
     void display() {
       this->privateDisplay();
     }
     
   }; //end MinHeap Class
-     //
 
 
-// Helper function to build the codebook
+/**
+ * Helper function to build the codebook
+ * params pointer to parent node, a string with inital value, reference of an array of string to store the codebook
+ * */
 void buildCodebook(const HeapNode<char> * parent, const std::string path, std::vector<std::string> & codebook) {
   //reach the end
   if (parent->left == nullptr && parent->right == nullptr) {
@@ -192,9 +266,8 @@ void buildCodebook(const HeapNode<char> * parent, const std::string path, std::v
 
 }
 
-
+//===MAIN PROGRAM===//
 int main(){
-
   
   //====== READ FROM FILE =====//
   std::ifstream inputFile("merchant.txt"); // Open the file
@@ -203,6 +276,7 @@ int main(){
       return 1; // Exit if the file couldn't be opened
   }
   
+  //Get file size 
   unsigned long fileSize = 0;
   char c;
   while (inputFile.get(c)) {
@@ -214,7 +288,7 @@ int main(){
   inputFile.clear(); // Clear EOF flag
   inputFile.seekg(0, std::ios::beg);// Reset the position to the beginning if to read the file again
 
-
+  //Prompt users for an integer
   unsigned long outputLength;
   while (true) {
     std::string input;
@@ -235,16 +309,18 @@ int main(){
   }
 
   //Initialize a vector for frequency counting (size 256 for all ASCII chars)
+  //NOTE: charFrequency[x]: stores the frequency of the character that has ASCII value = x.
+  //Example: charFrequency[97] = 10: means character 'a'(ASCII = 97) has a frequency of 10
   std::vector<int> charFrequency(256,0);
 
   std::string inString; //Store N length input String to use later
 
   while (inputFile.get(c)) {
     if (c != '\n' && c != '\r') {
-      //cast c into unsigned char then cast to unsigned int to store as an index of charFrequency
+      //cast c into unsigned char then cast to unsigned int to store as an index of charFrequency array
       //NOTE we can skip <unsigned int> cast since C++ will implicitly cast it 
       charFrequency[static_cast<unsigned int>(static_cast<unsigned char>(c))]++;
-      if (inString.length() <= outputLength) {
+      if (inString.length() < outputLength) {
         inString = inString + std::string(1, static_cast<unsigned char>(c));
       }
     }
@@ -290,25 +366,34 @@ int main(){
 
 
   //BUILDING Huffman Codebook
-  std::vector<std::string> codebook (256, "");
-  buildCodebook(&prefixFreeTree, "", codebook);
+  //NOTE: codebook[x]: stores the bitstring of the character that has ASCII value = x.
+  //Example: codebook[97] = 10: means character 'a'(ASCII = 97) has a frequency of 10
+  std::vector<std::string> codeBook (256, "");
 
-  //EXPORT to file
+  //build the codebook from the prefix-free tree
+  buildCodebook(&prefixFreeTree, "", codeBook);
+
+
+
+  //EXPORT the codebook to an output string
   std::string outString;
+
   //print check
   std::cout << "\nHuffman Codebook" << std::endl;
-  outString = outString + "'" + std::string(1, static_cast<unsigned char>(32)) + "' : " + codebook[32] + "\n";
+  outString = outString + "'" + std::string(1, static_cast<unsigned char>(32)) + "' : " + codeBook[32] + "\n";
+  std::cout << "'" << std::string(1, static_cast<unsigned char>(32)) << "' : " << codeBook[32] << std::endl;
   for (int i = 97; i <= 122; i++) {
-    outString = outString + "'" + std::string(1, static_cast<unsigned char>(i)) + "' : " + codebook[i] + "\n";
+    outString = outString + "'" + std::string(1, static_cast<unsigned char>(i)) + "' : " + codeBook[i] + "\n";
+    std::cout << "'" << std::string(1, static_cast<unsigned char>(i)) << "' : " << codeBook[i] << std::endl;
   }
+
   // Iterate through each character in inString and encode
   int huffmanBitTotal = 0;
   int asciiBitTotal = 0;
 
   for (char ch : inString) {
-
     // Get the Huffman encoding from codebook
-    std::string huffmanCode = codebook[static_cast<unsigned char>(ch)];
+    std::string huffmanCode = codeBook[static_cast<unsigned char>(ch)];
 
     // Calculate the bit length of the Huffman code and update totals
     int huffmanBits = huffmanCode.length();
@@ -322,9 +407,6 @@ int main(){
     outString += huffmanCode + "\t\t" + std::to_string(huffmanBitTotal) + "\t\t" + std::to_string(asciiBitTotal) + "\n";
   }
 
-  std::cout << outString << std::endl;
-
-
 
   // Create and open the output file
   std::ofstream outfile("out.txt");  
@@ -332,10 +414,10 @@ int main(){
     std::cerr << "Error creating output file!" << std::endl;
     return 1;
   }
-  // Write outString to the file
+  // Write output string to the file
   outfile << outString;
   outfile.close();
-  std::cout << "====Result exported to 'out.txt' file successfully!====" << std::endl;
+  std::cout << "\n====Result exported to 'out.txt' file successfully!====" << std::endl;
   
   //Free memory allocated for left and right nodes above
   for (auto & element : allocatedNodes) {
@@ -343,6 +425,6 @@ int main(){
   }
 
   return 0;
-}
+} //end main
  
 
