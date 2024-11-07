@@ -329,6 +329,8 @@ int main(){
   
 
   //==MAKE a node array
+  //NOTE: charFrequency[x]: stores the frequency of the character that has ASCII value = x.
+  //Example: charFrequency[97] = 10: means character 'a'(ASCII = 97) has a frequency of 10
   std::vector<HeapNode<char>> nodes;
   nodes.push_back(HeapNode<char>(charFrequency[32], static_cast<unsigned char>(32)));// Add the space
   for (int i = 97; i <= 122; i++) { //a-z
@@ -339,7 +341,8 @@ int main(){
   //==MAKE a MinHeap out of the node array
   MinHeap<HeapNode<char>> minHeap(nodes);
   std::cout << "\nMin Heap:" << std::endl;
-  minHeap.display();
+
+  minHeap.display();//print the heap should only see 27 characters
 
 
   //===BUILD prefix-free tree
@@ -359,7 +362,7 @@ int main(){
     dummy.left = left;
     dummy.right = right;
     minHeap.insert(dummy);
-    //minHeap.display();
+    minHeap.display();
   }
   HeapNode<char> prefixFreeTree = minHeap.deleteMin();
   std::cout << "\nPrefix-free tree: \n"<< prefixFreeTree << std::endl;
