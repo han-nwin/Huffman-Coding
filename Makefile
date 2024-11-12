@@ -2,7 +2,7 @@
 CXX = g++
 
 # Compiler flags
-CXXFLAGS = -Wall -Wextra -Wpedantic -std=c++20 -g
+CXXFLAGS = -Wall -Wextra -Wpedantic -DDEBUG -std=c++20 -g
 
 # Executable name
 EXEC = main
