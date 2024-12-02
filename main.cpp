@@ -186,7 +186,8 @@ class MinHeap {
      * If user initialize with an array, constructor calls buildHeap() function to 
      * build a heap out of that array.
      * If nothing is given, an empty heap is created.
-     * */    explicit MinHeap(const std::vector<Comparable> & arr = {}) : heap(arr){
+     * */    
+    explicit MinHeap(const std::vector<Comparable> & arr = {}) : heap(arr){
       if(!heap.empty()) {
         buildHeap();
       }
